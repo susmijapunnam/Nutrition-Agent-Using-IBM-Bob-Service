@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% block title %}{{ agent_name }} — AI Nutrition Chat{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0" style="height:calc(100vh - 70px);margin-top:70px">
+  <div class="row g-0 h-100">
+
+    <!-- ── Sidebar ────────────────────────────────────────────────────── -->
+    <div class="col-lg-3 col-md-4 sidebar-panel d-flex flex-column">
+      <div class="p-4 border-bottom">
+        <h6 class="text-muted text-uppercase fw-semibold ls-wide mb-3">Quick Actions</h6>
+
+        <!-- Profile Card -->
+        <div class="profile-card p-3 rounded-3 mb-3">
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <div class="avatar-circle">
+              <i class="bi bi-person-fill fs-4"></i>
+            </div>
+            <div>
+              <div class="fw-semibold" id="profileName">My Profile</div>
+              <small class="text-muted" id="profileSub">Set up your profile</small>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm w-100" data-bs-toggle="modal"
+                  data-bs-target="#profileModal">
+            <i class="bi bi-pencil-square me-1"></i> Edit Profile
+          </button>
+        </div>
+
+        <!-- Quick Prompts -->
+        <h6 class="text-muted text-uppercase fw-semibold ls-wide mb-2 mt-3">Suggestions</h6>
+        <div class="d-grid gap-2">
+          <button class="btn btn-outline-secondary btn-sm text-start quick-prompt"
+                  data-prompt="Create a 1-day balanced vegetarian Indian meal plan for me.">
+            <i class="bi bi-sun me-2 text-warning"></i>Today's Meal Plan
+          </button>
+          <button class="btn btn-outline-secondary btn-sm text-start quick-prompt"
+                  data-prompt="What should I eat to lose weight healthily? Give me Indian food options.">
+            <i class="bi bi-arrow-down-circle me-2 text-success"></i>Weight Loss Tips
+          </button>
+          <button class="btn btn-outline-secondary btn-sm text-start quick-prompt"
+                  data-prompt="Give me high-protein Indian breakfast options for muscle building.">
+            <i class="bi bi-lightning me-2 text-danger"></i>High Protein Meals
+          </button>
+          <button class="btn btn-outline-secondary btn-sm text-start quick-prompt"
+                  data-prompt="What are healthy Indian snacks under 200 calories?">
+            <i class="bi bi-cup-hot me-2 text-info"></i>Healthy Snacks
+          </button>
+          <button class="btn btn-outline-secondary btn-sm text-start quick-prompt"
+                  data-prompt="Plan a diabetic-friendly Indian diet for a week.">
+            <i class="bi bi-heart-pulse me-2 text-pink"></i>Diabetic Diet
+          </button>
+          <button class="btn btn-outline-secondary btn-sm text-start quick-prompt"
+                  data-prompt="What vitamins and minerals am I likely missing on a pure vegetarian diet?">
+            <i class="bi bi-capsule me-2 text-purple"></i>Micronutrients
+          </button>
+        </div>
+      </div>
+
+      <!-- Status indicator -->
+      <div class="p-3 mt-auto border-top">
+        <div class="d-flex align-items-center gap-2" id="statusBadge">
+          <span class="status-dot loading"></span>
+          <small class="text-muted">Connecting…</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Chat area ──────────────────────────────────────────────────── -->
+    <div class="col-lg-9 col-md-8 d-flex flex-column chat-container">
+
+      <!-- Chat header -->
+      <div class="chat-header px-4 py-3 border-bottom d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-3">
+          <div class="bot-avatar">
+            <i class="bi bi-robot fs-5"></i>
+          </div>
+          <div>
+            <div class="fw-semibold">{{ agent_name }}</div>
+            <small class="text-muted">IBM Watsonx.ai &bull; Granite</small>
+          </div>
+        </div>
+        <button id="clearChatBtn" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+          <i class="bi bi-trash me-1"></i>Clear
+        </button>
+      </div>
+
+      <!-- Messages -->
+      <div class="chat-messages flex-grow-1 p-4" id="chatMessages">
+        <!-- Welcome message -->
+        <div class="message-wrapper assistant">
+          <div class="bot-avatar-sm me-2"><i class="bi bi-robot"></i></div>
+          <div class="message-bubble assistant-bubble">
+            <p class="mb-2">
+              👋 Hello! I'm <strong>{{ agent_name }}</strong>, your AI-powered Nutrition Agent
+              built on <strong>IBM Watsonx.ai</strong> with Granite models.
+            </p>
+            <p class="mb-2">I can help you with:</p>
+            <ul class="mb-2">
+              <li>🥗 Personalized Indian &amp; global meal plans</li>
+              <li>🔥 Calorie &amp; macro analysis</li>
+              <li>⚖️ Weight management &amp; BMI guidance</li>
+              <li>👨‍👩‍👧 Family nutrition recommendations</li>
+              <li>🌿 Diet-specific advice (Keto, Vegan, Diabetic, etc.)</li>
+            </ul>
+            <p class="mb-0">Set up your profile on the left and ask me anything! 😊</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Typing indicator -->
+      <div class="typing-indicator px-4 py-2 d-none" id="typingIndicator">
+        <div class="message-wrapper assistant">
+          <div class="bot-avatar-sm me-2"><i class="bi bi-robot"></i></div>
+          <div class="message-bubble assistant-bubble typing-bubble">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input area -->
+      <div class="chat-input-area border-top px-4 py-3">
+        <div class="input-group chat-input-group">
+          <textarea id="chatInput" class="form-control rounded-start-4"
+                    placeholder="Ask me about nutrition, meals, calories, diet plans…"
+                    rows="1"></textarea>
+          <button id="sendBtn" class="btn btn-primary rounded-end-4 px-4">
+            <i class="bi bi-send-fill"></i>
+          </button>
+        </div>
+        <small class="text-muted mt-1 d-block">
+          Press <kbd>Enter</kbd> to send &nbsp;|&nbsp; <kbd>Shift+Enter</kbd> for new line
+        </small>
+      </div>
+    </div>
+
+  </div><!-- /row -->
+</div>
+
+<!-- ── Profile Modal ──────────────────────────────────────────────────────── -->
+<div class="modal fade" id="profileModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold"><i class="bi bi-person-circle me-2"></i>My Profile</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="profileForm">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Name</label>
+              <input type="text" class="form-control" id="pName" placeholder="Your name">
+            </div>
+            <div class="col-6">
+              <label class="form-label">Age</label>
+              <input type="number" class="form-control" id="pAge" min="1" max="120" placeholder="30">
+            </div>
+            <div class="col-6">
+              <label class="form-label">Gender</label>
+              <select class="form-select" id="pGender">
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label">Weight (kg)</label>
+              <input type="number" class="form-control" id="pWeight" step="0.1" placeholder="70">
+            </div>
+            <div class="col-6">
+              <label class="form-label">Height (cm)</label>
+              <input type="number" class="form-control" id="pHeight" placeholder="170">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Goal</label>
+              <select class="form-select" id="pGoal">
+                <option value="maintain">Maintain weight</option>
+                <option value="lose">Lose weight</option>
+                <option value="gain">Gain muscle</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Diet Type</label>
+              <select class="form-select" id="pDiet">
+                <option value="no preference">No preference</option>
+                <option value="vegetarian">Vegetarian</option>
+                <option value="vegan">Vegan</option>
+                <option value="Jain">Jain</option>
+                <option value="non-vegetarian">Non-vegetarian</option>
+                <option value="keto">Keto</option>
+                <option value="diabetic-friendly">Diabetic-friendly</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Allergies / Intolerances</label>
+              <input type="text" class="form-control" id="pAllergies"
+                     placeholder="e.g. peanuts, dairy, gluten">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Medical Conditions (optional)</label>
+              <input type="text" class="form-control" id="pMedical"
+                     placeholder="e.g. diabetes, hypertension">
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary px-4" id="saveProfileBtn" data-bs-dismiss="modal">
+          <i class="bi bi-check-lg me-1"></i>Save Profile
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}
